@@ -34,8 +34,8 @@ dependencies = [
 dynamic = ["version"]
 
 [project.urls]
-Homepage = "https://github.com/pypa/sampleproject"
-Issues = "https://github.com/pypa/sampleproject/issues"
+Homepage = "https://github.com/kms1212/pyApplicationFramework"
+Issues = "https://github.com/kms1212/pyApplicationFramework/issues"
 
 [project.optional-dependencies]
 opengl = ["PyOpenGL"]

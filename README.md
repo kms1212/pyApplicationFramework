@@ -26,7 +26,7 @@ if __name__ == "__main__":
     app.MainLoop()
 ```
 The code above creates a simple window with an text "Hello, World!" at the top-left corner of it as shown as the image below:
-![helloworld](images/helloworld.png)
+![helloworld](doc/images/helloworld.png)
 
 The code below written with PyApplicationFramework is a code which shows the same result:
 ```python
@@ -90,7 +90,7 @@ if __name__ == "__main__":
     frame.Show()
     app.MainLoop()
 ```
-![mutable](images/mutable.gif)
+![mutable](doc/images/mutable.gif)
 
 ## Default Controls
 - Button
