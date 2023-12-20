@@ -5,10 +5,10 @@ from typing import Optional
 # Internal Imports
 from ..view import PrimitiveView
 from .control import Control
-from ...mutable import MutableValue, valueof, ismutable
+from ...mutable import MutableOrNot, valueof, ismutable
 
 class StaticText(Control):
-    def __init__(self, label: MutableValue[str]):
+    def __init__(self, label: MutableOrNot[str]):
         super().__init__()
         self.label = label
 

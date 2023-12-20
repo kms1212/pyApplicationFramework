@@ -13,7 +13,7 @@ class ScrollablePanel(Control):
         super().__init__()
         self.__init_args = (args, kw)
         self.__sizer = sizer
-        self.body = attr.BodyAttribute(self)
+        self.body = attr.BodyAttribute[wx.Window, wx.Window, wx.Window, PrimitiveView](self)
 
     def _initialize(self, root: PrimitiveView, parent: PrimitiveView) -> wx.Window:
         label = self.__init_args[1].pop("label", None)
@@ -23,8 +23,6 @@ class ScrollablePanel(Control):
         panel.SetupScrolling()
         panel.SetSizer(self.__sizer)
         self.setWxInstance(panel)
-        if isinstance(self.body.value, list):
-            for view in self.body.value:
-                assert isinstance(view, PrimitiveView)
-                view.initialize(root, self)
+        for view in self.body.body:
+            view.initialize(root, self)
         return panel

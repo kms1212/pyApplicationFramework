@@ -13,11 +13,11 @@ class DataViewCtrl(Control):
     def __init__(self, *args, **kw):
         super().__init__()
         self.__init_args = (args, kw)
-        self.model = attr.TypedAttribute[wx.Window, wx.Window, wx.Window, dv.DataViewModel](self)
+        self.model = attr.Attribute[wx.Window, wx.Window, wx.Window, dv.DataViewModel](self)
 
     def _initialize(self, root: PrimitiveView, parent: PrimitiveView) -> wx.Window:
         dvc = dv.DataViewCtrl(parent.getWxInstance(), *self.__init_args[0], **self.__init_args[1])
-        model = self.model.getTypedValue()
+        model = self.model.value
         if model is not None:
             dvc.AssociateModel(model)
         return dvc

@@ -56,8 +56,9 @@ if __name__ == "__main__":
 
 As you can see, you can recognize the hierarchical structures of the UI, without using external markup language (like [XRC](https://docs.wxpython.org/wx.xrc.1moduleindex.html)), which is still needed to instantiate every single control defined inside of it.
 
-## Mutable Values
-Mutations of a variable or an attribute defined by `class Mutable[]()` can be observed by adding an event handler or synchronized to one or more attributes of the views or controls.
+## Mutable Expressions
+A mutable variable can trigger events when its value changes.
+A mutable expression can consist of one or more regular variables or expressions and a mutable variable or expression, and fires an event whenever the value of the mutable variable included in the expression changes.
 
 ```python
 import wx
@@ -76,6 +77,8 @@ class MutableWindow(ui.Window):
             ctl.ScrollablePanel(wx.BoxSizer(wx.VERTICAL))
             .body [[
                 ctl.StaticText(label=self.textbox_value)
+                    .sizer(wx.SizerFlags().Border(wx.TOP | wx.LEFT)),
+                ctl.StaticText(label=self.textbox_value + "-with suffix")
                     .sizer(wx.SizerFlags().Border(wx.TOP | wx.LEFT)),
                 ctl.TextCtrl(value=self.textbox_value)
                     .sizer(proportion=0, flag=wx.EXPAND),

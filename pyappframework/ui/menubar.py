@@ -41,7 +41,7 @@ class Menu(MenuComponent):
     def _initialize(self, root: wx.MenuBar, parent: Optional[MenuComponent]) -> wx.Menu:
         menu = wx.Menu()
         self.setWxInstance(menu)
-        items = self.body.value
+        items = self.body.body
         if isinstance(items, list):
             for item in items:
                 assert isinstance(item, MenuComponent)
@@ -58,7 +58,7 @@ class MenuItem(MenuComponent):
     def __init__(self, *args, **kw):
         super().__init__()
         self.__init_args = (args, kw)
-        self.eventHandler = attr.Attribute(self, attr.EventHandlerAttributeHandler[wx.Window, Optional[MenuComponent], MENUBAR_TYPES]())
+        self.eventHandler = attr.EventHandlerAttribute[wx.Window, Optional[MenuComponent], MENUBAR_TYPES](self)
 
     def _initialize(self, root: wx.MenuBar, parent: Optional[MenuComponent]) -> wx.MenuItem:
         assert parent is not None

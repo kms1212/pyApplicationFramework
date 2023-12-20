@@ -10,6 +10,7 @@ from pyappframework.ui import controls as ctl
 class TestWindow(ui.Window):
     def __init__(self, *args, **kw):
         self.bool_var = pyaf.Mutable[bool](False)
+        self.int_var = pyaf.Mutable[int](0)
         self.str_var = pyaf.Mutable[str]("")
         self.str_var2 = pyaf.Mutable[str]("")
         self.image_var = pyaf.Mutable[wx.Image](wx.Image("test/resources/test_image.png", type=wx.BITMAP_TYPE_PNG).Rescale(50, 50))
@@ -18,6 +19,7 @@ class TestWindow(ui.Window):
         self.SetTitle("TestWindow")
         self.bool_var.value = True
         self.bool_var.addListener(self.onCheckBoxValueChange)
+        
 
     def body(self) -> ctl.Panel:
         return (
@@ -29,7 +31,7 @@ class TestWindow(ui.Window):
                     .sizer(wx.SizerFlags().Border(wx.TOP | wx.LEFT)),
                 ctl.CheckBox(value=self.bool_var, label=self.str_var2)
                     .sizer(wx.SizerFlags().Border(wx.TOP | wx.LEFT)),
-                ctl.StaticText(label=self.str_var)
+                ctl.StaticText(label=self.str_var + self.str_var2 + (self.int_var + 2).toString())
                     .sizer(wx.SizerFlags().Border(wx.TOP | wx.LEFT)),
                 ctl.StaticLine()
                     .sizer(wx.SizerFlags().Border(wx.TOP | wx.LEFT)),
@@ -42,7 +44,8 @@ class TestWindow(ui.Window):
                 ctl.StaticBitmap(image=self.bitmap_var)
                     .sizer(wx.SizerFlags().Border(wx.TOP | wx.LEFT)),
                 ctl.Button(label="Button")
-                    .sizer(wx.SizerFlags().Border(wx.TOP | wx.LEFT)),
+                    .sizer(wx.SizerFlags().Border(wx.TOP | wx.LEFT))
+                    .eventHandler(wx.EVT_BUTTON, self.onButtonClick),
                 ctl.TextCtrl(value=self.str_var2)
                     .sizer(wx.SizerFlags().Border(wx.TOP | wx.LEFT)),
                 ctl.Gauge()
@@ -69,6 +72,10 @@ class TestWindow(ui.Window):
     @pyaf.event_handler
     def onCheckBoxValueChange(self, evt: pyaf.MutationEvent):
         self.str_var.value = "True" if evt.newValue else "False"
+
+    @pyaf.event_handler
+    def onButtonClick(self, evt: wx.Event):
+        self.int_var.value += 1
 
 class ControlsTest(unittest.TestCase):
     def setUp(self):

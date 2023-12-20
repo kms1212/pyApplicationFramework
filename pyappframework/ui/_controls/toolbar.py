@@ -19,8 +19,7 @@ class ToolBar(Control):
     def _initialize(self, root: PrimitiveView, parent: PrimitiveView) -> wx.Window:
         tb = wx.ToolBar(parent.getWxInstance(), *self.__init_args[0], **self.__init_args[1])
         self.setWxInstance(tb)
-        assert isinstance(self.body.value, list)
-        for tool in self.body.value:
+        for tool in self.body.body:
             assert isinstance(tool, Tool)
             tool.initialize(root, self)
         tb.Realize()
@@ -30,6 +29,8 @@ class Tool(attr.AttributeContainer[wx.Window, ToolBar, wx.ToolBarToolBase]):
     def __init__(self):
         super().__init__()
         self.__wx_instance = None
+        self.eventHandler = attr.EventHandlerAttribute(self)
+        self.export = attr.ExportAttribute(self)
 
     def initialize(self, root: PrimitiveView, parent: ToolBar) -> wx.ToolBarToolBase:
         self.__wx_instance = self._initialize(root, parent)

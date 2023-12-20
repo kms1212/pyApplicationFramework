@@ -3,12 +3,12 @@ import wx
 
 # Internal Imports
 from .control import Control
-from ...mutable import Mutable, MutableValue, valueof, ismutable
+from ...mutable import MutableOrNot, Mutable, valueof, ismutable
 from ..view import PrimitiveView
 from .. import attribute as attr
 
 class CheckBox(Control):
-    def __init__(self, value: Mutable[bool], label: MutableValue[str]):
+    def __init__(self, value: Mutable[bool], label: MutableOrNot[str]):
         super().__init__()
         self.value = value
         self.label = label

@@ -24,17 +24,9 @@ class AttributeContainer(Generic[R, P, T]):
             delegate(root, parent, target)
 
 R, P, T = (TypeVar("R"), TypeVar("P"), TypeVar("T"))
-class AttributeHandler(Generic[R, P, T]):
-    @abc.abstractmethod
-    def _handle_value(self, obj: AttributeContainer[R, P, T], *args, **kw) -> Any:
-        pass
-
-R, P, T = (TypeVar("R"), TypeVar("P"), TypeVar("T"))
-class Attribute(Generic[R, P, T]):
-    def __init__(self, obj: AttributeContainer[R, P, T], handler: Optional[AttributeHandler[R, P, T]] = None, default = None, count: int = -1):
+class AttributeBase(Generic[R, P, T]):
+    def __init__(self, obj: AttributeContainer[R, P, T], count: int = -1):
         self.obj = obj
-        self.handler = handler
-        self.value = default
         self.count = count
 
     def checkCount(self):
@@ -42,106 +34,91 @@ class Attribute(Generic[R, P, T]):
             assert self.count > 0
             self.count -= 1
 
-    def __call__(self, *args, **kw) -> Any:
+    def __call__(self, *args) -> Any:
         self.checkCount()
-        if self.handler is not None:
-            self.value = self.handler._handle_value(self.obj, *args, **kw)
-        else:
-            self.value = (args, kw)
-        return self.obj
-
-    __getitem__ = __call__
-
-R, P, T = (TypeVar("R"), TypeVar("P"), TypeVar("T"))
-class ArgumentAttribute(Generic[R, P, T], Attribute[R, P, T]):
-    def __init__(self, obj: AttributeContainer[R, P, T]):
-        super().__init__(obj, None, None, 1)
-        self.value = ((), {})
-    
-    def __call__(self, *args, **kw) -> Any:
-        self.checkCount()
-        self.value = (args, kw)
+        self._handle_value(*args)
         return self.obj
     
-    __getitem__ = __call__
-
-    def getArgs(self) -> tuple[tuple, dict]:
-        return self.value
+    @abc.abstractmethod
+    def _handle_value(self, *args):
+        pass
 
 R, P, T, V = (TypeVar("R"), TypeVar("P"), TypeVar("T"), TypeVar("V"))
-class TypedAttribute(Generic[R, P, T, V], Attribute[R, P, T]):
-    def __init__(self, obj: AttributeContainer[R, P, T]):
-        super().__init__(obj, None, None, 1)
+class Attribute(Generic[R, P, T, V], AttributeBase[R, P, T]):
+    def __init__(self, obj: AttributeContainer[R, P, T], default: Optional[V] = None, count: int = -1):
+        super().__init__(obj, count)
+        self.value = default
 
-    def __call__(self, val: V, /) -> Any:
-        self.checkCount()
-        self.value = val
-        return self.obj
+    def _handle_value(self, value: V):
+        self.value = value
 
-    __getitem__ = __call__
+R, P, T = (TypeVar("R"), TypeVar("P"), TypeVar("T"))
+class ArgumentAttribute(Generic[R, P, T], Attribute[R, P, T, tuple[tuple, dict]]):
+    def __init__(self, obj: AttributeContainer[R, P, T], count: int = -1):
+        super().__init__(obj, ((), {}), count)
 
-    def getTypedValue(self) -> Optional[V]:
-        return self.value
+    def __call__(self, *args, **kw) -> Any:
+        return Attribute.__call__(self, (args, kw))
 
-class SizerChildAttributeHandler(AttributeHandler[wx.Window, wx.Window, wx.Window]):
-    def _handle_value(self, obj: AttributeContainer[wx.Window, wx.Window, wx.Window], *args, **kw):
-        obj.addAttribDelegate(self._delegate(args, kw))
+class SizerChildAttribute(ArgumentAttribute[wx.Window, wx.Window, wx.Window]):
+    def __init__(self, obj: AttributeContainer[wx.Window, wx.Window, wx.Window]):
+        super().__init__(obj, 1)
 
-    def _delegate(self, args, kw):
+    def _handle_value(self, value: tuple[dict, tuple]):
+        self.obj.addAttribDelegate(self._delegate(value))
+
+    def _delegate(self, value: tuple[dict, tuple]):
         def func(root: wx.Window, parent: wx.Window, target: wx.Window):
             parent_sizer = target.GetParent().GetSizer()
             if parent_sizer is not None:
-                parent_sizer.Add(target, *args, **kw)
+                parent_sizer.Add(target, *value[0], **value[1])
         return func
 
-class FontAttributeHandler(AttributeHandler[wx.Window, wx.Window, wx.Window]):
-    def _handle_value(self, obj: AttributeContainer[wx.Window, wx.Window, wx.Window], font: Union[wx.Font, wx.FontInfo]):
-        obj.addAttribDelegate(self._delegate(font))
+class FontAttribute(AttributeBase[wx.Window, wx.Window, wx.Window]):
+    def __init__(self, obj: AttributeContainer[wx.Window, wx.Window, wx.Window]):
+        super().__init__(obj, 1)
 
-    def _delegate(self, font: Union[wx.Font, wx.FontInfo]):
-        if isinstance(font, wx.FontInfo):
-            font = wx.Font(font)
+    def _handle_value(self, font: Union[wx.Font, wx.FontInfo]):
+        self.obj.addAttribDelegate(self._delegate(wx.Font(font)))
+
+    def _delegate(self, font: wx.Font):
         def func(root: wx.Window, parent: wx.Window, target: wx.Window):
             target.SetFont(font)
         return func
 
 R, P, T = (TypeVar("R"), TypeVar("P"), TypeVar("T"))
-class EventHandlerAttributeHandler(AttributeHandler[R, P, T]):
-    def _handle_value(self, obj: AttributeContainer[R, P, T], evt: wx.Event, func: Callable[[wx.Event], None]):
-        obj.addAttribDelegate(self._delegate(evt, func))
+class EventHandlerAttribute(AttributeBase[R, P, T]):
+    def _handle_value(self, evt: wx.Event, func: Callable[[wx.Event], None]):
+        self.obj.addAttribDelegate(self._delegate(evt, func))
 
     def _delegate(self, evt: wx.Event, handler: Callable[[wx.Event], None]):
         def func(root, parent, target):
             root.Bind(evt, handler, target)
         return func
 
-R, P, T = (TypeVar("R"), TypeVar("P"), TypeVar("T"))
-class ExportAttributeHandler(Generic[R, P, T], AttributeHandler[R, P, T]):
-    def _handle_value(self, obj: AttributeContainer[R, P, T], exportid: str):
-        obj.addAttribDelegate(self._delegate(exportid))
+class ToolTipAttribute(AttributeBase[wx.Window, wx.Window, wx.Window]):
+    def __init__(self, obj: AttributeContainer[wx.Window, wx.Window, wx.Window]):
+        super().__init__(obj, 1)
 
-    def _delegate(self, exportid: str):
-        def func(root, parent, target):
-            setattr(root, exportid, target)
-        return func
-
-class ToolTipAttributeHandler(AttributeHandler[wx.Window, wx.Window, wx.Window]):
-    def _handle_value(self, obj: AttributeContainer[wx.Window, wx.Window, wx.Window], tto: Union[wx.ToolTip, str]):
-        obj.addAttribDelegate(self._delegate(tto))
+    def _handle_value(self, tto: Union[wx.ToolTip, str]):
+        self.obj.addAttribDelegate(self._delegate(tto))
 
     def _delegate(self, tto: Union[wx.ToolTip, str]):
         def func(root: wx.Window, parent: wx.Window, target: wx.Window):
             target.SetToolTip(tto)
         return func
 
-T = TypeVar("T", bound=wx.Window)
-class RawModifierAttributeHandler(AttributeHandler[wx.Window, wx.Window, wx.Window]):
-    def _handle_value(self, obj: AttributeContainer[wx.Window, wx.Window, wx.Window], func: Callable[[T], None]):
-        obj.addAttribDelegate(self._delegate(func))
+R, P, T = (TypeVar("R"), TypeVar("P"), TypeVar("T"))
+class ExportAttribute(AttributeBase[R, P, T]):
+    def __init__(self, obj: AttributeContainer[R, P, T]):
+        super().__init__(obj, 1)
 
-    def _delegate(self, modifier: Callable[[T], None]):
-        def func(root: wx.Window, parent: wx.Window, target: wx.Window):
-            modifier(target)  # type: ignore
+    def _handle_value(self, attr: str):
+        self.obj.addAttribDelegate(self._delegate(attr))
+
+    def _delegate(self, attr: str):
+        def func(root: R, parent: P, target: T):
+            setattr(root, attr, target)
         return func
 
 C = TypeVar("C")
@@ -151,43 +128,16 @@ C = TypeVar("C")
 CONTENTS_LIST_INPUT_TYPE = list[Union[C, CONTENTS_LIST_TYPE[C]]]
 
 R, P, T, V = (TypeVar("R"), TypeVar("P"), TypeVar("T"), TypeVar("V"))
-class BodyAttribute(Generic[R, P, T, V], Attribute[R, P, T]):
+class BodyAttribute(Generic[R, P, T, V], AttributeBase[R, P, T]):
     def __init__(self, obj: AttributeContainer[R, P, T]):
-        super().__init__(obj, None, [], 1)
+        super().__init__(obj, 1)
+        self.body = []
 
-    def __call__(self, l: CONTENTS_LIST_INPUT_TYPE[V], /) -> Any:
-        self.checkCount()
-        body = []
+    def _handle_value(self, l: CONTENTS_LIST_INPUT_TYPE[V]):
         for litem in l:
             if isinstance(litem, list):
-                body.extend(litem)
+                self.body.extend(litem)
             else:
-                body.append(litem)
-        self.value: CONTENTS_LIST_TYPE[V] = body
-        return self.obj
+                self.body.append(litem)
 
-    __getitem__ = __call__
-
-    def getBody(self) -> CONTENTS_LIST_TYPE[V]:
-        return self.value
-
-class VisibilityAttributeHandler(AttributeHandler[wx.Window, wx.Window, wx.Window]):
-    def __init__(self):
-        super().__init__()
-        self.__target = None
-
-    def _handle_value(self, obj: AttributeContainer[wx.Window, wx.Window, wx.Window], vm: Mutable[bool], /):
-        obj.addAttribDelegate(self._delegate(obj, vm))
-
-    def _delegate(self, obj: AttributeContainer[wx.Window, wx.Window, wx.Window], vm: Mutable[bool]):
-        def func(root: wx.Window, parent: wx.Window, target: wx.Window):
-            self.__target = target
-            vm.addListener(self._onValueChange)
-            target.Show(vm.value)
-        return func
-
-    @event_handler
-    def _onValueChange(self, evt: MutationEvent):
-        assert self.__target is not None
-        self.__target.Show(evt.newValue)
-        self.__target.GetParent().Layout()
+    __getitem__ = AttributeBase.__call__

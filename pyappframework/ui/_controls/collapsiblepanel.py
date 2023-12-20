@@ -12,15 +12,14 @@ class CollapsiblePanel(Control):
         super().__init__()
         self.__init_args = (args, kw)
         self.__sizer = sizer
-        self.body = attr.BodyAttribute(self)
+        self.body = attr.BodyAttribute[wx.Window, wx.Window, wx.Window, PrimitiveView](self)
 
     def _initialize(self, root: PrimitiveView, parent: PrimitiveView) -> wx.Window:
         cp = wx.CollapsiblePane(parent.getWxInstance(), *self.__init_args[0], **self.__init_args[1])
         panel = cp.GetPane()
         panel.SetSizer(self.__sizer)
         self.setWxInstance(panel)
-        if isinstance(self.body.value, list):
-            for view in self.body.value:
-                assert isinstance(view, PrimitiveView)
-                view.initialize(root, self)
+        for view in self.body.body:
+            assert isinstance(view, PrimitiveView)
+            view.initialize(root, self)
         return cp

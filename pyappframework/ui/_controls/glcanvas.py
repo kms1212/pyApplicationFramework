@@ -25,7 +25,8 @@ class GLView(Control):
 
     def _initialize(self, root: PrimitiveView, parent: PrimitiveView) -> wx.Window:
         glc = wxgl.GLCanvas(parent.getWxInstance(), *self.__init_args[0], **self.__init_args[1])
-        contextArgs = self.contextArgs.getArgs()
+        contextArgs = self.contextArgs.value
+        assert contextArgs is not None
         self.__context = wxgl.GLContext(glc, None, *contextArgs[0], **contextArgs[1])
         glc.Bind(wx.EVT_ERASE_BACKGROUND, self._OnErase)
         glc.Bind(wx.EVT_SIZE, self._OnResize)

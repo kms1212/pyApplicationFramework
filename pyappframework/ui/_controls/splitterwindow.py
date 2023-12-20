@@ -19,14 +19,14 @@ class SplitterWindow(Control):
         self.__init_args = (args, kw)
         self.__ori = ori
         self.__pos = pos
-        self.body = attr.BodyAttribute(self)
+        self.body = attr.BodyAttribute[wx.Window, wx.Window, wx.Window, PrimitiveView](self)
 
     def _initialize(self, root: PrimitiveView, parent: PrimitiveView) -> wx.Window:
-        contents = self.body.value
+        contents = self.body.body
         sw = wx.SplitterWindow(parent.getWxInstance(), *self.__init_args[0], **self.__init_args[1])
         self.setWxInstance(sw)
         instance = []
-        if isinstance(contents, list) and len(contents) == 2:
+        if len(contents) == 2:
             for view in contents:
                 assert isinstance(view, PrimitiveView)
                 instance.append(view.initialize(root, self))
